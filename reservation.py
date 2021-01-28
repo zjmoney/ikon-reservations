@@ -79,7 +79,7 @@ if available and not booked and reservations_left:
 	remove_overlay()
 	button = driver.find_element_by_xpath("//span[contains(text(), 'Save')]")
 	button.click()
-	button = driver.find_element_by_xpath("//span[contains(text(), 'Continue To Confirm')]")
+	button = driver.find_element_by_xpath("//span[contains(text(), 'Continue to Confirm')]")
 	button.click()
 
 	WebDriverWait(driver,10).until(EC.presence_of_element_located((By.XPATH, "//input[@type='checkbox']")))   
