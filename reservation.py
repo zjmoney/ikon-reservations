@@ -5,7 +5,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 import calendar
 
-date_str = "2020-11-25"
+date_str = "2021-1-16"
 date = datetime.strptime(date_str, "%Y-%m-%d")    
 
 email = ""
@@ -21,15 +21,15 @@ driver = Edge(options=options)
 driver.get("https://account.ikonpass.com/en/login?redirect_uri=/en/myaccount/add-reservations/")
 
 def remove_overlay():
-    #get rid of cc overlay
-    buttons = driver.find_elements_by_css_selector("a.cc-btn")
-    while any(map(lambda x: x.size["height"] != 0, buttons)):
-        for button in buttons:
-            try:
-                button.click()
-            except:
-                pass
-        buttons = driver.find_elements_by_css_selector("a.cc-btn")
+	#get rid of cc overlay
+	buttons = driver.find_elements_by_css_selector("a.cc-btn")
+	while any(map(lambda x: x.size["height"] != 0, buttons)):
+		for button in buttons:
+			try:
+				button.click()
+			except:
+				pass
+		buttons = driver.find_elements_by_css_selector("a.cc-btn")
 
 remove_overlay()
 
@@ -59,13 +59,13 @@ remove_overlay()
 datepicker = driver.find_element_by_css_selector("div.DayPicker-wrapper") 
 month_selected = False
 while not month_selected:
-    month_text = calendar.month_name[date.month]
-    month = datepicker.find_elements_by_xpath("//span[contains(text(), " + "'" + month_text + "')]")
-    if len(month) > 0:
-        month_selected = True
-    else:
-        button = datepicker.find_element_by_class_name("icon-chevron-right")
-        button.click()
+	month_text = calendar.month_name[date.month]
+	month = datepicker.find_elements_by_xpath("//span[contains(text(), " + "'" + month_text + "')]")
+	if len(month) > 0:
+		month_selected = True
+	else:
+		button = datepicker.find_element_by_class_name("icon-chevron-right")
+		button.click()
 
 day = datepicker.find_element_by_xpath("//div[@aria-label='" + date.strftime("%a %b %d %Y") + "']")
 day.click()
@@ -75,26 +75,24 @@ booked = "confirmed" in day_classes
 div = driver.find_elements_by_xpath("//div[contains(text(), 'Reservation Limit Reached')]")
 reservations_left = len(div) == 0
 
-#confirm reservation if available
 if available and not booked and reservations_left:
-    remove_overlay()
-    button = driver.find_element_by_xpath("//span[contains(text(), 'Save')]")
-    button.click()
-    button = driver.find_element_by_xpath("//span[contains(text(), 'Review My Reservations')]")
-    button.click()
+	remove_overlay()
+	button = driver.find_element_by_xpath("//span[contains(text(), 'Save')]")
+	button.click()
+	button = driver.find_element_by_xpath("//span[contains(text(), 'Continue To Confirm')]")
+	button.click()
 
-    WebDriverWait(driver,10).until(EC.presence_of_element_located((By.XPATH, "//input[@type='checkbox']")))   
-    button = driver.find_element_by_xpath("//input[@type='checkbox']")
-    button.click()
-    WebDriverWait(driver,10).until(EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'Confirm Reservations')]")))   
-    button = driver.find_element_by_xpath("//span[contains(text(), 'Confirm Reservations')]")
-    button.click()
-    with open("flag.txt", "w") as f:
-        f.write("Booked")
+	WebDriverWait(driver,10).until(EC.presence_of_element_located((By.XPATH, "//input[@type='checkbox']")))   
+	button = driver.find_element_by_xpath("//input[@type='checkbox']")
+	button.click()
+	WebDriverWait(driver,10).until(EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'Confirm Reservations')]")))   
+	button = driver.find_element_by_xpath("//span[contains(text(), 'Confirm Reservations')]")
+	button.click()
+	with open("C:/Playground/ski/flag.txt", "w") as f:
+		f.write("Booked")
 
-#log
-with open("log.txt", "a") as f:
-    f.write(datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
-    f.write(": Available - %r, Booked - %r, Reservations Left- %r" % (available, booked, reservations_left))
-    f.write("\n")
+with open("C:/Playground/ski/log.txt", "a") as f:
+	f.write(datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
+	f.write(": Available - %r, Booked - %r, Reservations Left- %r" % (available, booked, reservations_left))
+	f.write("\n")
 driver.close()
