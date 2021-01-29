@@ -4,18 +4,31 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.by import By
 import calendar
+import time
 
-date_str = "2021-1-16"
-date = datetime.strptime(date_str, "%Y-%m-%d")    
+# Date to look for reservations on
+date_str = "2021-1-31"
+date = datetime.strptime(date_str, "%Y-%m-%d")
 
+# Length of time to wait between retries
+retry_wait_in_sec = 60
+
+# Maximum retries. Set to 0 or less for infinite
+max_attempts = 0
+
+# Email and Password of account
 email = ""
 password = ""
 
+# Resort to reserve at as listed on the Ikon pass website
 resort = "Crystal Mountain Resort"
+
+print("Starting web driver...")
 
 options = EdgeOptions()
 options.use_chromium = True
 options.add_argument("headless")
+options.add_argument("--log-level=3")
 
 driver = Edge(options=options)
 driver.get("https://account.ikonpass.com/en/login?redirect_uri=/en/myaccount/add-reservations/")
@@ -44,6 +57,8 @@ submit.click()
 WebDriverWait(driver,10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'input.react-autosuggest__input')))   
 remove_overlay()
 
+print("Logged In")
+
 #select resort
 search = driver.find_element_by_css_selector("input.react-autosuggest__input")
 search.send_keys(resort)
@@ -52,8 +67,12 @@ button.click()
 button = driver.find_element_by_xpath("//span[contains(text(), 'Continue')]")
 button.click()
 
+print("Selected " + resort)
+
 WebDriverWait(driver,10).until(EC.presence_of_element_located((By.CSS_SELECTOR, 'div.DayPicker-wrapper')))
 remove_overlay()
+
+print("Looking for reservations on " + date_str)
 
 #select date
 datepicker = driver.find_element_by_css_selector("div.DayPicker-wrapper") 
@@ -75,23 +94,34 @@ booked = "confirmed" in day_classes
 div = driver.find_elements_by_xpath("//div[contains(text(), 'Reservation Limit Reached')]")
 reservations_left = len(div) == 0
 
-if available and not booked and reservations_left:
-	remove_overlay()
-	button = driver.find_element_by_xpath("//span[contains(text(), 'Save')]")
-	button.click()
-	button = driver.find_element_by_xpath("//span[contains(text(), 'Continue to Confirm')]")
-	button.click()
+tries = 0
 
-	WebDriverWait(driver,10).until(EC.presence_of_element_located((By.XPATH, "//input[@type='checkbox']")))   
-	button = driver.find_element_by_xpath("//input[@type='checkbox']")
-	button.click()
-	WebDriverWait(driver,10).until(EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'Confirm Reservations')]")))   
-	button = driver.find_element_by_xpath("//span[contains(text(), 'Confirm Reservations')]")
-	button.click()
-	with open("C:/Playground/ski/flag.txt", "w") as f:
-		f.write("Booked")
+while max_attempts <= 0 or tries < max_attempts:
+	if available and not booked and reservations_left:
+		remove_overlay()
+		button = driver.find_element_by_xpath("//span[contains(text(), 'Save')]")
+		button.click()
+		button = driver.find_element_by_xpath("//span[contains(text(), 'Continue To Confirm')]")
+		button.click()
 
-with open("C:/Playground/ski/log.txt", "a") as f:
+		WebDriverWait(driver,10).until(EC.presence_of_element_located((By.XPATH, "//input[@type='checkbox']")))   
+		button = driver.find_element_by_xpath("//input[@type='checkbox']")
+		button.click()
+		WebDriverWait(driver,10).until(EC.presence_of_element_located((By.XPATH, "//span[contains(text(), 'Confirm Reservations')]")))   
+		button = driver.find_element_by_xpath("//span[contains(text(), 'Confirm Reservations')]")
+		button.click()
+		with open("flag.txt", "w") as f:
+			f.write("Booked")
+
+		print("Booked successfully!")
+		break
+
+	time.sleep(retry_wait_in_sec)
+	tries = tries+1
+	if (tries % 5 == 0):
+		print("Attempted " + str(tries) + " times...")
+
+with open("log.txt", "a") as f:
 	f.write(datetime.now().strftime("%m/%d/%Y, %H:%M:%S"))
 	f.write(": Available - %r, Booked - %r, Reservations Left- %r" % (available, booked, reservations_left))
 	f.write("\n")
